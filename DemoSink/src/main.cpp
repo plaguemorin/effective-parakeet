@@ -1,22 +1,25 @@
-#include <RtpRtcp/Session.h>
 #include <QtWidgets/QApplication>
-#include "ui/MainWindow.h"
 
+#include <RtpRtcp/Session.h>
+
+#include "ui/MainWindow.h"
 #include "SimpleUdpTransport.h"
+#include "vp8/VP8PacketCodecFactory.h"
 
 int main(int argc, char *argv[]) {
   QApplication qApplication(argc, argv);
 
-  // Build our RTP Payload -> Codecs registry
-
   // Build our session
   rtp::Session theSession;
+
+  // Build our RTP Payload -> Codecs registry
+  theSession.RegisterRtpPayload(96, std::make_shared<VP8PacketCodecFactory>());
 
   // Construct our transport and connect everything up
   SimpleUdpTransport transport;
   transport.RtcpReceiveCallback([&](const std::vector<uint8_t> &&data) { theSession.ParseRtcpPacket(std::move(data)); });
   transport.RtpReceiveCallback([&](const std::vector<uint8_t> &&data) { theSession.ParseRtpPacket(std::move(data)); });
-  transport.StateChangedCallback([&](rtp::Transport::State newState) { theSession.TransportStateChanged(newState); });
+  transport.StateChangedCallback([&](rtptransport::State newState) { theSession.TransportStateChanged(newState); });
   theSession.SendRtcpDataCallback([&](const std::vector<uint8_t> &&data) { return transport.SendRtcp(std::move(data)); });
   theSession.SendRtpDataCallback([&](const std::vector<uint8_t> &&data) { return transport.SendRtp(std::move(data)); });
 
@@ -31,7 +34,14 @@ int main(int argc, char *argv[]) {
       rtp::Stream::Config config;
       config.rtp.ssrc = ssrc;
       config.type = rtp::Stream::VIDEO;
-      theSession.CreateSinkStream(config);
+      auto ptr = theSession.CreateSinkStream(config);
+      if (auto stream = ptr.lock()) {
+        stream->CompleteEncodedFrameCallback([&] (std::unique_ptr<rtp::EncodedFrame>&& frame) {
+            mainWindow.showVp8Frame(
+                std::unique_ptr<rtp::EncodedVideoFrame>(reinterpret_cast<rtp::EncodedVideoFrame*>(frame.release() )
+            ));
+        });
+      }
 
       mainWindow.NewSsrc(ssrc);
   });

@@ -19,7 +19,7 @@ namespace rtp {
 
       version = *p >> 6;
       padding = (*p & 0x20) > 0;
-      extensions = (0x10) > 0;
+      extensions = (*p & 0x10) > 0;
       auto local_cc = (uint8_t) (*p & 0xF);
       ++p;
 

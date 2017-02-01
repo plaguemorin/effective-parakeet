@@ -6,9 +6,9 @@
 #include <thread>
 #include <sys/socket.h>
 
-#include <RtpRtcp/Transport.h>
+#include <RtpTransport/Transport.h>
 
-class SimpleUdpTransport : public rtp::Transport {
+class SimpleUdpTransport : public rtptransport::Transport {
 public:
     SimpleUdpTransport();
 

@@ -11,5 +11,5 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Widgets finds its own dependencies (QtGui and QtCore).
 find_package(Qt5Widgets REQUIRED)
 
-add_executable(DemoSink src/main.cpp src/SimpleUdpTransport.cpp src/SimpleUdpTransport.h src/ui/MainWindow.cpp src/ui/MainWindow.h)
+add_executable(DemoSink src/main.cpp src/SimpleUdpTransport.cpp src/SimpleUdpTransport.h src/ui/MainWindow.cpp src/ui/MainWindow.h src/vp8/VP8PacketCodecFactory.cpp src/vp8/VP8PacketCodecFactory.h src/vp8/VP8PacketReconstructor.cpp src/vp8/VP8PacketReconstructor.h)
 target_link_libraries(DemoSink PUBLIC RtpRtcp Qt5::Widgets vpx)

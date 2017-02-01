@@ -5,7 +5,8 @@
 
 namespace rtp {
     Session::Session()
-        : housekeeping(std::thread(&Session::HousekeepingOnThread, this)) {
+        : housekeeping(std::thread(&Session::HousekeepingOnThread, this)),
+          payloadRegistry(std::make_shared<PayloadRegistry>()) {
 
     }
 
@@ -16,9 +17,9 @@ namespace rtp {
       }
     }
 
-    std::weak_ptr<Stream> Session::CreateSinkStream(const Stream::Config &config) {
+    std::weak_ptr<SinkStream> Session::CreateSinkStream(const Stream::Config &config) {
       if (config.rtp.ssrc == 0) {
-        return std::weak_ptr<Stream>();
+        return std::weak_ptr<SinkStream>();
       }
 
       std::lock_guard<std::mutex> lock_guard(sink_ssrc_lock);
@@ -73,7 +74,7 @@ namespace rtp {
       stream->ProcessRtpPacket(std::move(packet));
     }
 
-    void Session::TransportStateChanged(rtp::Transport::State state) {
+    void Session::TransportStateChanged(rtptransport::State state) {
 
     }
 
@@ -81,7 +82,7 @@ namespace rtp {
 
     }
 
-    std::shared_ptr<Stream> Session::findSinkStream(const uint32_t ssrc) const {
+    std::shared_ptr<SinkStream> Session::findSinkStream(const uint32_t ssrc) const {
       auto item = sink_streams.find(ssrc);
       if (item != sink_streams.end()) {
         return item->second;
@@ -97,9 +98,13 @@ namespace rtp {
         seen_sinks.insert(packet.SSRC());
 
         if (unknownSsrc) {
-          std::thread dispatch(unknownSsrc, *item);
+          std::thread dispatch(unknownSsrc, packet.SSRC());
           dispatch.detach();
         }
       }
+    }
+
+    bool Session::RegisterRtpPayload(uint8_t payloadType, std::shared_ptr<rtp::PayloadTypeFactory> factory) {
+      return payloadRegistry->RegisterFactory(payloadType, factory);
     }
 }

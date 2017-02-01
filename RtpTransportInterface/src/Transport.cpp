@@ -1,4 +1,4 @@
-#include "RtpRtcp/Transport.h"
+#include <RtpTransport/Transport.h>
 
 #include <cstdio>
 
@@ -6,7 +6,7 @@ namespace {
     constexpr auto kRtpVersion = 2;
 }
 
-namespace rtp {
+namespace rtptransport {
     Transport::Transport() : state(kTransportNotReady) {
 
     }

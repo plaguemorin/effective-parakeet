@@ -8,9 +8,9 @@
 #include <vector>
 #include <mutex>
 
-#include <RtpRtcp/Stream.h>
-#include <RtpRtcp/Transport.h>
+#include <RtpRtcp/SinkStream.h>
 #include <RtpRtcp/PayloadRegistry.h>
+#include <RtpTransport/State.h>
 
 namespace rtp {
     class Session {
@@ -26,7 +26,7 @@ namespace rtp {
          * Creates a stream configured for receiving packets
          * @return the stream
          */
-        std::weak_ptr<Stream> CreateSinkStream(const Stream::Config &config);
+        std::weak_ptr<SinkStream> CreateSinkStream(const Stream::Config &config);
 
         /**
          * Creates a stream configured for sending packets
@@ -44,14 +44,16 @@ namespace rtp {
 
         void ParseRtpPacket(const std::vector<uint8_t> &&raw_data);
 
-        void TransportStateChanged(rtp::Transport::State state);
+        void TransportStateChanged(rtptransport::State state);
+
+        bool RegisterRtpPayload(uint8_t payloadType, std::shared_ptr<rtp::PayloadTypeFactory> factory);
 
     private:
         bool active = true;
         std::thread housekeeping;
         std::mutex sink_ssrc_lock;
         std::set<uint32_t> seen_sinks;
-        std::map<uint32_t, std::shared_ptr<Stream>> sink_streams;
+        std::map<uint32_t, std::shared_ptr<SinkStream>> sink_streams;
         std::shared_ptr<PayloadRegistry> payloadRegistry;
         SendDataCallback sendRtp;
         SendDataCallback sendRtcp;
@@ -59,7 +61,7 @@ namespace rtp {
 
         void HousekeepingOnThread();
 
-        std::shared_ptr<Stream> findSinkStream(const uint32_t ssrc) const;
+        std::shared_ptr<SinkStream> findSinkStream(const uint32_t ssrc) const;
 
         void ProcessUnknownSsrc(const RtpPacket &&packet);
     };

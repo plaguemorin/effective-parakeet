@@ -1,25 +1,19 @@
-#ifndef RTPRTCP_TRANSPORT_H
-#define RTPRTCP_TRANSPORT_H
+#ifndef RTPTRASNPORT_TRANSPORT_H
+#define RTPTRASNPORT_TRANSPORT_H
 
 #include <cstdint>
 #include <functional>
 #include <vector>
 #include <system_error>
 
-namespace rtp {
+#include <RtpTransport/State.h>
+
+namespace rtptransport {
     /**
      * Transport class provides transport adapters for RTP/RTCP sessions
      */
     class Transport {
     public:
-        enum State {
-            kTransportNotReady, // Transport cannot send or receive
-            kTransportRecvReady, // Transport can only receive
-            kTransportSendReady, // Transport can only send
-            kTransportReady, // Transport can send and receive
-            kTransportClosed // Transport is closed and is considered dead
-        };
-
         using OnPacketCallback = std::function<void(const std::vector<uint8_t>&&)>;
         using OnTransportStateChanged = std::function<void(const State)>;
 
