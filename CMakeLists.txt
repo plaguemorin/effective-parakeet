@@ -15,6 +15,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     #        <http://msdn.microsoft.com/en-us/library/hsyx7kbz.aspx>
 endif ()
 
+add_subdirectory(RtpTransportInterface)
 add_subdirectory(RtpRtcp)
 add_subdirectory(DemoSink)
 
