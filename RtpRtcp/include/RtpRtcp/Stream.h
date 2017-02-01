@@ -10,8 +10,9 @@
 
 #include <RtpRtcp/Extension.h>
 #include <RtpRtcp/RtpPacket.h>
-#include <RtpRtcp/Frame.h>
-#include <RtpRtcp/PacketizedData.h>
+
+#include <RtpPacketization/EncodedFrame.h>
+#include <RtpPacketization/PacketizedData.h>
 
 namespace rtp {
     /**
@@ -68,9 +69,9 @@ namespace rtp {
         uint8_t LastRtpPayloadType() const { return lastRtpPayloadType; }
 
     protected:
-        void ReportPacketizedData(const PacketizedData &data);
+        void ReportPacketizedData(const packetization::PacketizedData &data);
 
-        void ReportEncodedFrame(const EncodedFrame &frame);
+        void ReportEncodedFrame(const packetization::EncodedFrame &frame);
 
     private:
         std::mutex statsCriticalLock;

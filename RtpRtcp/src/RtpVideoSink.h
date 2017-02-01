@@ -7,14 +7,13 @@
 #include <chrono>
 #include <mutex>
 
-#include <RtpRtcp/PayloadRegistry.h>
 #include <RtpRtcp/SinkStream.h>
 
 namespace rtp {
     namespace internal {
         class RtpVideoSink : public SinkStream {
         public:
-            RtpVideoSink(const Config &config, std::shared_ptr<PayloadRegistry> registry);
+            RtpVideoSink(const Config &config, std::shared_ptr<packetization::PayloadRegistry> registry);
 
             virtual ~RtpVideoSink();
 

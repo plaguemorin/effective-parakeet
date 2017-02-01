@@ -6,7 +6,7 @@
 namespace rtp {
     Session::Session()
         : housekeeping(std::thread(&Session::HousekeepingOnThread, this)),
-          payloadRegistry(std::make_shared<PayloadRegistry>()) {
+          payloadRegistry(std::make_shared<packetization::PayloadRegistry>()) {
 
     }
 
@@ -74,7 +74,7 @@ namespace rtp {
       stream->ProcessRtpPacket(std::move(packet));
     }
 
-    void Session::TransportStateChanged(rtptransport::State state) {
+    void Session::TransportStateChanged(rtp::transport::State state) {
 
     }
 
@@ -104,7 +104,7 @@ namespace rtp {
       }
     }
 
-    bool Session::RegisterRtpPayload(uint8_t payloadType, std::shared_ptr<rtp::PayloadTypeFactory> factory) {
+    bool Session::RegisterRtpPayload(uint8_t payloadType, std::shared_ptr<packetization::PayloadTypeFactory> factory) {
       return payloadRegistry->RegisterFactory(payloadType, factory);
     }
 }

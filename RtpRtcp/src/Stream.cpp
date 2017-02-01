@@ -9,7 +9,7 @@ namespace rtp {
 
     }
 
-    void Stream::ReportPacketizedData(const PacketizedData &data) {
+    void Stream::ReportPacketizedData(const packetization::PacketizedData &data) {
       std::lock_guard<std::mutex> lock_guard(statsCriticalLock);
 
       if (data.inOrder) {
@@ -21,7 +21,7 @@ namespace rtp {
       }
     }
 
-    void Stream::ReportEncodedFrame(const EncodedFrame &frame) {
+    void Stream::ReportEncodedFrame(const packetization::EncodedFrame &frame) {
       std::lock_guard<std::mutex> lock_guard(statsCriticalLock);
 
       if (frame.keyFrame) {

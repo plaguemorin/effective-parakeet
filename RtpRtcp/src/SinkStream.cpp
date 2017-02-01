@@ -3,7 +3,7 @@
 
 namespace rtp {
 
-    SinkStream::SinkStream(const Stream::Config &config, std::shared_ptr<PayloadRegistry> registry)
+    SinkStream::SinkStream(const Stream::Config &config, std::shared_ptr<packetization::PayloadRegistry> registry)
         : Stream(config), payloadRegistry(registry) {
 
     }
@@ -21,7 +21,7 @@ namespace rtp {
       const auto inOrder = last_received_sequence_number + 1 == packet.SequenceNumber() || !SeenOnePacket();
 
       // Create our container
-      PacketizedData data;
+      packetization::PacketizedData data;
       data.lastKeyframeRtpTimestamp = LastKeyframeRtpTimestamp();
       data.localTimestamp = std::chrono::system_clock::now();
       data.inOrder = inOrder;
@@ -83,7 +83,7 @@ namespace rtp {
              && LastRtpTimestamp() != packet.TimeStamp();
     }
 
-    void SinkStream::EncodedFrameReceived(std::unique_ptr<EncodedFrame> &&frame) {
+    void SinkStream::EncodedFrameReceived(std::unique_ptr<packetization::EncodedFrame> &&frame) {
       // Enforce RTP type
       frame->rtpPayloadType = LastRtpPayloadType();
 

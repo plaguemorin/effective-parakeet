@@ -7,14 +7,14 @@
 
 
 #include <RtpRtcp/Stream.h>
-#include <RtpRtcp/PayloadRegistry.h>
+#include <RtpPacketization/PayloadRegistry.h>
 
 namespace rtp {
     class SinkStream : public Stream {
     public:
-        using CompleteEncodedFrame = std::function<void(std::unique_ptr<EncodedFrame> &&)>;
+        using CompleteEncodedFrame = std::function<void(std::unique_ptr<packetization::EncodedFrame> &&)>;
 
-        SinkStream(const Stream::Config &config, std::shared_ptr<PayloadRegistry> registry);
+        SinkStream(const Stream::Config &config, std::shared_ptr<packetization::PayloadRegistry> registry);
 
         virtual ~SinkStream();
 
@@ -25,13 +25,13 @@ namespace rtp {
     protected:
         bool isPacketNewFrame(const RtpPacket &packet);
 
-        void EncodedFrameReceived(std::unique_ptr<EncodedFrame> &&);
+        void EncodedFrameReceived(std::unique_ptr<packetization::EncodedFrame> &&);
 
     private:
         CompleteEncodedFrame completeEncodedFrameSink;
 
-        std::shared_ptr<PayloadRegistry> payloadRegistry;
-        std::unique_ptr<PacketizedRtpDataReceiver> packetizedDataSink;
+        std::shared_ptr<packetization::PayloadRegistry> payloadRegistry;
+        std::unique_ptr<packetization::RtpDataReceiver> packetizedDataSink;
 
         std::mutex criticalSectionRtpReceiver;
         uint16_t last_received_sequence_number = 0;

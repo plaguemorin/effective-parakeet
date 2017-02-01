@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   SimpleUdpTransport transport;
   transport.RtcpReceiveCallback([&](const std::vector<uint8_t> &&data) { theSession.ParseRtcpPacket(std::move(data)); });
   transport.RtpReceiveCallback([&](const std::vector<uint8_t> &&data) { theSession.ParseRtpPacket(std::move(data)); });
-  transport.StateChangedCallback([&](rtptransport::State newState) { theSession.TransportStateChanged(newState); });
+  transport.StateChangedCallback([&](rtp::transport::State newState) { theSession.TransportStateChanged(newState); });
   theSession.SendRtcpDataCallback([&](const std::vector<uint8_t> &&data) { return transport.SendRtcp(std::move(data)); });
   theSession.SendRtpDataCallback([&](const std::vector<uint8_t> &&data) { return transport.SendRtp(std::move(data)); });
 
@@ -36,9 +36,9 @@ int main(int argc, char *argv[]) {
       config.type = rtp::Stream::VIDEO;
       auto ptr = theSession.CreateSinkStream(config);
       if (auto stream = ptr.lock()) {
-        stream->CompleteEncodedFrameCallback([&] (std::unique_ptr<rtp::EncodedFrame>&& frame) {
+        stream->CompleteEncodedFrameCallback([&] (std::unique_ptr<rtp::packetization::EncodedFrame>&& frame) {
             mainWindow.showVp8Frame(
-                std::unique_ptr<rtp::EncodedVideoFrame>(reinterpret_cast<rtp::EncodedVideoFrame*>(frame.release() )
+                std::unique_ptr<rtp::packetization::EncodedVideoFrame>(reinterpret_cast<rtp::packetization::EncodedVideoFrame*>(frame.release() )
             ));
         });
       }

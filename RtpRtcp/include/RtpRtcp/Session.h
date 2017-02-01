@@ -9,7 +9,7 @@
 #include <mutex>
 
 #include <RtpRtcp/SinkStream.h>
-#include <RtpRtcp/PayloadRegistry.h>
+#include <RtpPacketization/PayloadRegistry.h>
 #include <RtpTransport/State.h>
 
 namespace rtp {
@@ -44,9 +44,9 @@ namespace rtp {
 
         void ParseRtpPacket(const std::vector<uint8_t> &&raw_data);
 
-        void TransportStateChanged(rtptransport::State state);
+        void TransportStateChanged(rtp::transport::State state);
 
-        bool RegisterRtpPayload(uint8_t payloadType, std::shared_ptr<rtp::PayloadTypeFactory> factory);
+        bool RegisterRtpPayload(uint8_t payloadType, std::shared_ptr<packetization::PayloadTypeFactory> factory);
 
     private:
         bool active = true;
@@ -54,7 +54,7 @@ namespace rtp {
         std::mutex sink_ssrc_lock;
         std::set<uint32_t> seen_sinks;
         std::map<uint32_t, std::shared_ptr<SinkStream>> sink_streams;
-        std::shared_ptr<PayloadRegistry> payloadRegistry;
+        std::shared_ptr<packetization::PayloadRegistry> payloadRegistry;
         SendDataCallback sendRtp;
         SendDataCallback sendRtcp;
         SsrcCallback unknownSsrc;

@@ -8,7 +8,7 @@
 
 #include <RtpTransport/Transport.h>
 
-class SimpleUdpTransport : public rtptransport::Transport {
+class SimpleUdpTransport : public rtp::transport::Transport {
 public:
     SimpleUdpTransport();
 

@@ -10,6 +10,6 @@ void MainWindow::NewSsrc(const uint32_t unknownSsrc) {
 
 }
 
-void MainWindow::showVp8Frame(const std::unique_ptr<rtp::EncodedVideoFrame> &&frame) {
+void MainWindow::showVp8Frame(const std::unique_ptr<rtp::packetization::EncodedVideoFrame> &&frame) {
   qDebug() << "Got a video frame";
 }

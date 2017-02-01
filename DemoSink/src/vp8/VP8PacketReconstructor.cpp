@@ -82,14 +82,14 @@ namespace {
     };
 }
 
-VP8PacketReconstructor::VP8PacketReconstructor(uint8_t pt) : PacketizedRtpDataReceiver(pt) {
+VP8PacketReconstructor::VP8PacketReconstructor(uint8_t pt) : rtp::packetization::RtpDataReceiver(pt) {
 
 }
 
 VP8PacketReconstructor::~VP8PacketReconstructor() {
 }
 
-rtp::PacketizedRtpDataReceiver::Response VP8PacketReconstructor::ProcessPacketizedData(const rtp::PacketizedData &data, const std::vector<uint8_t> &payload) {
+rtp::packetization::RtpDataReceiver::Response VP8PacketReconstructor::ProcessPacketizedData(const rtp::packetization::PacketizedData &data, const std::vector<uint8_t> &payload) {
   PayloadDescriptor payloadDescriptor = {0};
   ExtendedControlBitsField extendedControlBitsField = {0};
   PictureIdField pictureIdField = {0};
@@ -191,7 +191,7 @@ rtp::PacketizedRtpDataReceiver::Response VP8PacketReconstructor::ProcessPacketiz
   return Response(true);
 }
 
-std::unique_ptr<rtp::EncodedFrame> VP8PacketReconstructor::GetCompletedFrame() {
+std::unique_ptr<rtp::packetization::EncodedFrame> VP8PacketReconstructor::GetCompletedFrame() {
   return std::move(next_frame_);
 }
 

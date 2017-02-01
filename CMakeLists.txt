@@ -16,6 +16,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 endif ()
 
 add_subdirectory(RtpTransportInterface)
+add_subdirectory(RtpPacketizationInterface)
 add_subdirectory(RtpRtcp)
 add_subdirectory(DemoSink)
 

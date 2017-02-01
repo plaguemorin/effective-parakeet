@@ -6,8 +6,10 @@
 #include <QMainWindow>
 #include <QListView>
 #include <QtCore/QStringListModel>
+
 #include <memory>
-#include <RtpRtcp/Frame.h>
+
+#include <RtpPacketization/EncodedVideoFrame.h>
 
 class MainWindow : public QMainWindow {
 Q_OBJECT
@@ -16,7 +18,7 @@ public:
     MainWindow(QWidget *parent = nullptr, const Qt::WindowFlags &flags = Qt::WindowFlags());
     void NewSsrc(const uint32_t unknownSsrc);
 
-    void showVp8Frame(const std::unique_ptr<rtp::EncodedVideoFrame> &&frame);
+    void showVp8Frame(const std::unique_ptr<rtp::packetization::EncodedVideoFrame> &&frame);
 
 private:
     QStringList stringList;

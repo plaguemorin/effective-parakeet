@@ -49,14 +49,14 @@ std::error_code SimpleUdpTransport::ListenOn(uint16_t port) {
   auto s = getaddrinfo(nullptr, port_s.c_str(), &hints, &result);
   if (s != 0) {
     // TODO: Lookup didn't work error
-    SetNewState(rtptransport::kTransportClosed);
+    SetNewState(rtp::transport::kTransportClosed);
     return std::error_code();
   }
 
   /* Loop until we find a result that binds */
   for (struct addrinfo *rp = result; rp != NULL; rp = rp->ai_next) {
     if (bind(fd, rp->ai_addr, rp->ai_addrlen) != -1) {
-      SetNewState(rtptransport::kTransportRecvReady);
+      SetNewState(rtp::transport::kTransportRecvReady);
       return std::error_code();
     }
   }
@@ -97,7 +97,7 @@ void SimpleUdpTransport::SocketThread() {
 
     /* 0 bytes available signals the socket is closed */
     if (bytes_available == 0) {
-      SetNewState(rtptransport::kTransportClosed);
+      SetNewState(rtp::transport::kTransportClosed);
       continue;
     }
 
@@ -110,12 +110,12 @@ void SimpleUdpTransport::SocketThread() {
     /* The return value could be an error... */
     switch (bytes_read) {
       case -1:ReportError(std::error_code(errno, std::system_category()));
-      case 0:SetNewState(rtptransport::kTransportClosed);
+      case 0:SetNewState(rtp::transport::kTransportClosed);
         break;
 
       default:
         /* If we didn't set our remote address, set it to whom ever sent us a packet */
-        if (!CurrentState() != rtptransport::kTransportReady) {
+        if (!CurrentState() != rtp::transport::kTransportReady) {
           ConnectTo(addr, addrlen);
         }
 
@@ -132,5 +132,5 @@ void SimpleUdpTransport::ConnectTo(const sockaddr_storage &addr, const socklen_t
     return;
   }
 
-  SetNewState(rtptransport::kTransportReady);
+  SetNewState(rtp::transport::kTransportReady);
 }
