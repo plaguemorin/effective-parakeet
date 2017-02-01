@@ -11,7 +11,7 @@ namespace rtp {
 
         }
 
-        std::unique_ptr<RtpDataReceiver> PayloadRegistry::CreateEncodedFramesSink(uint8_t payloadType) {
+        std::unique_ptr<StreamReconstructor> PayloadRegistry::CreateEncodedFramesSink(uint8_t payloadType) {
           auto item = factories.find(payloadType);
           if (item != factories.end()) {
             return std::move(item->second->CreateSink(payloadType));

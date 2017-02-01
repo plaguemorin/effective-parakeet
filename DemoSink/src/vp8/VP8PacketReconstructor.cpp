@@ -82,14 +82,14 @@ namespace {
     };
 }
 
-VP8PacketReconstructor::VP8PacketReconstructor(uint8_t pt) : rtp::packetization::RtpDataReceiver(pt) {
+VP8PacketReconstructor::VP8PacketReconstructor(uint8_t pt) : rtp::packetization::StreamReconstructor(pt) {
 
 }
 
 VP8PacketReconstructor::~VP8PacketReconstructor() {
 }
 
-rtp::packetization::RtpDataReceiver::Response VP8PacketReconstructor::ProcessPacketizedData(const rtp::packetization::PacketizedData &data, const std::vector<uint8_t> &payload) {
+bool VP8PacketReconstructor::ProcessPacketizedData(const rtp::packetization::PayloadDescriptor &data, const std::vector<uint8_t> &payload) {
   PayloadDescriptor payloadDescriptor = {0};
   ExtendedControlBitsField extendedControlBitsField = {0};
   PictureIdField pictureIdField = {0};
@@ -124,7 +124,7 @@ rtp::packetization::RtpDataReceiver::Response VP8PacketReconstructor::ProcessPac
     // Does the RTP layer agree ?
     if (!data.newFrame) {
       // RTP and VP8 don't agree - now that's not good!
-      return Response(false);
+      return false;
     }
 
     // Payload header is only present in the first frame
@@ -136,7 +136,7 @@ rtp::packetization::RtpDataReceiver::Response VP8PacketReconstructor::ProcessPac
     // Before we allocate a frame, make sure we have valid data
     if (payloadHeader.interframe && !seen_one_keyframe) {
       // We have an interframe but we didn't have any keyframes yet!
-      return Response(false);
+      return false;
     }
 
     // Allocate memory for our raw frame
@@ -173,7 +173,7 @@ rtp::packetization::RtpDataReceiver::Response VP8PacketReconstructor::ProcessPac
 
   if (!next_frame_) {
     // We need a place to send the data to!
-    return Response(false);
+    return false;
   }
 
   // We have to copy the payload
@@ -185,13 +185,8 @@ rtp::packetization::RtpDataReceiver::Response VP8PacketReconstructor::ProcessPac
 
   // Marker bit marks the frame as completed
   if (data.marker) {
-    return Response(true, true);
+    QueueCompletedFrame(std::move(next_frame_));
   }
 
-  return Response(true);
+  return true;
 }
-
-std::unique_ptr<rtp::packetization::EncodedFrame> VP8PacketReconstructor::GetCompletedFrame() {
-  return std::move(next_frame_);
-}
-

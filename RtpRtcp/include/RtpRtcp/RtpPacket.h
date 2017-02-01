@@ -52,7 +52,7 @@ namespace rtp {
 
         size_t PaddingLength() const { return padding_size; }
 
-        size_t PayloadDataLength() const { return payload.size() - padding ? padding_size : 0; }
+        size_t PayloadDataLength() const { return payload.size() - (padding ? padding_size : 0); }
 
         const std::vector<uint8_t> &Payload() const { return payload; }
 

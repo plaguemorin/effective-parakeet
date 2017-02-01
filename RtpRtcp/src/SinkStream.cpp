@@ -9,6 +9,7 @@ namespace rtp {
     }
 
     SinkStream::~SinkStream() {
+      DestroyCurrentStreamReconstructor();
     }
 
     bool SinkStream::ProcessRtpPacket(const RtpPacket &&packet) {
@@ -16,13 +17,46 @@ namespace rtp {
       // SSRCs of streams can change (and must be reflected in the RTCP)
       // sinks can track the new SSRC by using the CNAME which is unique
 
+      // We need to check if our payload changed to create a packetizedDataSink
+      if (!MaybeCreateStreamReconstructorForPacket(packet)) {
+        // Not having a depacketizer is the end of the world
+        // Notify to make sure we don't get threads that are waiting forever
+        DestroyCurrentStreamReconstructor();
+        return false;
+      }
+      // Make sure this happens in order
+      std::lock_guard<std::mutex> lock_guard(criticalSectionRtpReceiver);
 
+      // Create our container
+      const auto payloadDescriptor = CreateAndReportDescriptor(packet);
+
+      // Update the stats
+      if (packet.SequenceNumber() > largestSequenceNumberSeen) {
+        largestSequenceNumberSeen = packet.SequenceNumber();
+      }
+
+      // check for wraparound
+      if (last_received_sequence_number > packet.SequenceNumber()
+          && payloadDescriptor.packetDelta <= 5) {
+        numSequenceWrappedAround++;
+        largestSequenceNumberSeen = packet.SequenceNumber();
+      }
+
+      last_received_sequence_number = packet.SequenceNumber();
+
+      // Notify the encoded frame thread to wake up, but since we hold the lock to
+      // criticalSectionRtpReceiver, it will block right away until we exit this scope
+      encodedFramesAvailable.notify_all();
+
+      // Send all this to the depacketizer
+      return packetizedDataSink->ProcessPacketizedData(payloadDescriptor, packet.Payload());
+    }
+
+    packetization::PayloadDescriptor SinkStream::CreateAndReportDescriptor(const RtpPacket &packet) {
       // Check if the sequence number is in order or not
       const auto inOrder = last_received_sequence_number + 1 == packet.SequenceNumber() || !SeenOnePacket();
 
-      // Create our container
-      packetization::PacketizedData data;
-      data.lastKeyframeRtpTimestamp = LastKeyframeRtpTimestamp();
+      packetization::PayloadDescriptor data;
       data.localTimestamp = std::chrono::system_clock::now();
       data.inOrder = inOrder;
       data.marker = packet.MarkerFlag();
@@ -31,50 +65,42 @@ namespace rtp {
       data.rtpTimestamp = packet.TimeStamp();
       data.payloadDataLength = packet.PayloadDataLength();
 
-      ReportPacketizedData(data);
+      data.ssrc = SSRC();
+      data.frameId = (uint32_t) ((numSequenceWrappedAround << 16) + packet.SequenceNumber());
+      data.packetDelta = packet.SequenceNumber() - last_received_sequence_number;
 
-      // We need to check if our payload changed
-      const auto isSamePayload = packet.PayloadType() == LastRtpPayloadType() || !SeenOnePacket();
-      if (!isSamePayload) {
+      ReportPacketizedData(data);
+      return data;
+    }
+
+    bool SinkStream::MaybeCreateStreamReconstructorForPacket(const RtpPacket &packet) {
+      if (packet.PayloadType() != LastRtpPayloadType() || !SeenOnePacket()) {
         // Since payload type isn't the same
         // We'll need to change our de-packetizer
         // And inform the sink that the content payload has changed
+        DestroyCurrentStreamReconstructor();
 
-        packetizedDataSink = std::move(payloadRegistry->CreateEncodedFramesSink(packet.PayloadType()));
+        // Create the new sink
+        packetizedDataSink = move(payloadRegistry->CreateEncodedFramesSink(packet.PayloadType()));
+
+        // Create drain thread
+        encodedFramesDrainThread = std::thread(&SinkStream::ProcessEncodedFramesOnThread, this);
       }
 
-      // Make sure we have a de-packetizer
-      if (!packetizedDataSink) {
-        // Not having a depacketizer is the end of the world
-        return false;
+      return (bool) packetizedDataSink;
+    }
+
+    void SinkStream::DestroyCurrentStreamReconstructor() {
+      packetizedDataSink = nullptr;
+
+      // Cleanup previous drain thread
+      if (encodedFramesDrainThread.joinable()) {
+        encodedFramesAvailable.notify_all();
+        encodedFramesDrainThread.join();
       }
-
-      // Send all this to the depacketizer
-      auto response = packetizedDataSink->ProcessPacketizedData(data, packet.Payload());
-
-      // If we had a completed encoded frame, dispatch it here, even if we didn't succeed
-      if (response.frame_complete) {
-        EncodedFrameReceived(std::move(packetizedDataSink->GetCompletedFrame()));
-      }
-
-      // Early exit if the depacketization didn't work
-      if (!response.success) {
-        // Don't update stats if the process failed
-        return false;
-      }
-
-      // Update the stats before returning success
-      // This needs to happen in order
-      std::lock_guard<std::mutex> lock_guard(criticalSectionRtpReceiver);
-      if (inOrder) {
-        last_received_sequence_number = packet.SequenceNumber();
-      }
-
-      return true;
     }
 
     bool SinkStream::isPacketNewFrame(const RtpPacket &packet) {
-      std::lock_guard<std::mutex> lock_guard(criticalSectionRtpReceiver);
       if (!SeenOnePacket()) {
         return true;
       }
@@ -83,17 +109,31 @@ namespace rtp {
              && LastRtpTimestamp() != packet.TimeStamp();
     }
 
-    void SinkStream::EncodedFrameReceived(std::unique_ptr<packetization::EncodedFrame> &&frame) {
-      // Enforce RTP type
-      frame->rtpPayloadType = LastRtpPayloadType();
+    void SinkStream::ProcessEncodedFramesOnThread() {
+      while (packetizedDataSink) {
+        std::unique_lock<std::mutex> criticalSection(criticalSectionRtpReceiver);
+        encodedFramesAvailable.wait(criticalSection);
+        criticalSection.unlock();
 
-      // Report it for stats
-      ReportEncodedFrame(*frame.get());
+        while (packetizedDataSink && packetizedDataSink->HasCompleteFramesQueued()) {
+          auto frame = packetizedDataSink->GetNextCompleteFrame();
 
-      // Make sure we have a sink to send it to...
-      // otherwise we discard the data, what a waste
-      if (completeEncodedFrameSink) {
-        completeEncodedFrameSink(std::move(frame));
+          // Enforce RTP type
+          frame->rtpPayloadType = LastRtpPayloadType();
+
+          // Report it for stats
+          ReportEncodedFrame(*frame.get());
+
+          // Make sure we have a sink to send it to...
+          // otherwise we discard the data, what a waste
+          if (completeEncodedFrameSink) {
+            completeEncodedFrameSink(std::move(frame));
+          }
+        }
       }
+    }
+
+    void SinkStream::ReportEncodedFrameResult(uint32_t frameId, bool result) {
+
     }
 }

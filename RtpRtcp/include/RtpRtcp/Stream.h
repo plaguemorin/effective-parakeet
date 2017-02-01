@@ -12,7 +12,7 @@
 #include <RtpRtcp/RtpPacket.h>
 
 #include <RtpPacketization/EncodedFrame.h>
-#include <RtpPacketization/PacketizedData.h>
+#include <RtpPacketization/PayloadDescriptor.h>
 
 namespace rtp {
     /**
@@ -42,9 +42,9 @@ namespace rtp {
             MediaType type;
         };
 
-        Stream(const Config &config);
-
         virtual ~Stream();
+
+        uint32_t SSRC() const { return config.rtp.ssrc; }
 
         /**
          * Reports if at least one packet was sent to ReportPacketizedData
@@ -69,11 +69,15 @@ namespace rtp {
         uint8_t LastRtpPayloadType() const { return lastRtpPayloadType; }
 
     protected:
-        void ReportPacketizedData(const packetization::PacketizedData &data);
+        Stream(const Config &config);
+
+        void ReportPacketizedData(const packetization::PayloadDescriptor &data);
 
         void ReportEncodedFrame(const packetization::EncodedFrame &frame);
 
     private:
+        const Config config;
+
         std::mutex statsCriticalLock;
 
         std::chrono::system_clock::time_point lastPacketizedReportTime;

@@ -40,13 +40,15 @@ namespace rtp {
 
         void UnknownSsrcCallback(SsrcCallback callback) { unknownSsrc = callback; }
 
-        void ParseRtcpPacket(const std::vector<uint8_t> &&raw_data);
+        bool ParseRtcpPacket(const std::vector<uint8_t> &&raw_data);
 
-        void ParseRtpPacket(const std::vector<uint8_t> &&raw_data);
+        bool ParseRtpPacket(const std::vector<uint8_t> &&raw_data);
 
         void TransportStateChanged(rtp::transport::State state);
 
         bool RegisterRtpPayload(uint8_t payloadType, std::shared_ptr<packetization::PayloadTypeFactory> factory);
+
+        void ReportEncodedFrameResult(uint32_t streamSsrc, uint32_t frameId, bool result);
 
     private:
         bool active = true;

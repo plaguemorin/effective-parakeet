@@ -12,10 +12,10 @@ namespace rtp {
 
         void Transport::OnData(const std::vector<uint8_t> &&data) const {
           // Figure out if we're dealing with RTP or RTCP
-          auto common_header = data[0];
+          auto first_byte = data[0];
 
           // The version is common to every type
-          const auto version = common_header >> 6;
+          const auto version = first_byte >> 6;
           if (version != kRtpVersion) {
             // This isn't anything we understand
             // Discard this packet
@@ -23,7 +23,8 @@ namespace rtp {
           }
 
           // Decode RTP payload type
-          const auto rtp_payload_type = (uint8_t) (common_header & 0x7F);
+          const auto second_byte = data[1];
+          const auto rtp_payload_type = (uint8_t) (second_byte & 0x7F);
 
           // RTP payload size 72 -> 76 are actually RTPC
           if (rtp_payload_type >= 72 && rtp_payload_type <= 76) {

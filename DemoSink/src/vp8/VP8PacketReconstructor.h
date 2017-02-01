@@ -3,19 +3,16 @@
 #ifndef EFFECTIVE_PARAKEET_VP8PACKETRECONSTRUCTOR_H
 #define EFFECTIVE_PARAKEET_VP8PACKETRECONSTRUCTOR_H
 
-
 #include <RtpPacketization/PayloadRegistry.h>
 #include <RtpPacketization/EncodedVideoFrame.h>
 
-class VP8PacketReconstructor : public rtp::packetization::RtpDataReceiver {
+class VP8PacketReconstructor : public rtp::packetization::StreamReconstructor {
 public:
     VP8PacketReconstructor(uint8_t pt);
 
     virtual ~VP8PacketReconstructor();
 
-    Response ProcessPacketizedData(const rtp::packetization::PacketizedData &data, const std::vector<uint8_t> &payload) override;
-
-    std::unique_ptr<rtp::packetization::EncodedFrame> GetCompletedFrame() override;
+    bool ProcessPacketizedData(const rtp::packetization::PayloadDescriptor &data, const std::vector<uint8_t> &payload) override;
 
 private:
     class VP8EncodedImage : public rtp::packetization::EncodedVideoFrame {

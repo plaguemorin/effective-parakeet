@@ -18,6 +18,9 @@ namespace rtp {
 
             virtual Type FrameType() const = 0;
 
+            uint32_t frame_id = 0;
+            uint32_t ssrc = 0;
+
             uint8_t rtpPayloadType = 0;
             bool keyFrame;
             uint32_t timestamp;

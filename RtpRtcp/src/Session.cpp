@@ -49,29 +49,29 @@ namespace rtp {
       return std::weak_ptr<Stream>();
     }
 
-    void Session::ParseRtcpPacket(const std::vector<uint8_t> &&raw_data) {
-
+    bool Session::ParseRtcpPacket(const std::vector<uint8_t> &&raw_data) {
+      return false;
     }
 
-    void Session::ParseRtpPacket(const std::vector<uint8_t> &&raw_data) {
+    bool Session::ParseRtpPacket(const std::vector<uint8_t> &&raw_data) {
       if (raw_data.size() < RtpPacket::kMinimalRtpPacketSize) {
         // TODO: Error, packet is too darn small!
-        return;
+        return false;
       }
 
       RtpPacket packet;
       if (!packet.ReadPacket(std::move(raw_data))) {
         // Unable to parse packet
-        return;
+        return false;
       }
 
       auto stream = findSinkStream(packet.SSRC());
       if (!stream) {
         ProcessUnknownSsrc(std::move(packet));
-        return;
+        return true;
       }
 
-      stream->ProcessRtpPacket(std::move(packet));
+      return stream->ProcessRtpPacket(std::move(packet));
     }
 
     void Session::TransportStateChanged(rtp::transport::State state) {
@@ -106,5 +106,12 @@ namespace rtp {
 
     bool Session::RegisterRtpPayload(uint8_t payloadType, std::shared_ptr<packetization::PayloadTypeFactory> factory) {
       return payloadRegistry->RegisterFactory(payloadType, factory);
+    }
+
+    void Session::ReportEncodedFrameResult(uint32_t streamSsrc, uint32_t frameId, bool result) {
+      auto stream = findSinkStream(streamSsrc);
+      if (stream) {
+        stream->ReportEncodedFrameResult(frameId, result);
+      }
     }
 }

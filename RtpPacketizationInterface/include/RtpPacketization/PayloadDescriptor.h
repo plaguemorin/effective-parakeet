@@ -9,7 +9,7 @@
 
 namespace rtp {
     namespace packetization {
-        struct PacketizedData {
+        struct PayloadDescriptor {
             size_t payloadDataLength;
             uint32_t rtpTimestamp;
             uint8_t rtpPayloadType;
@@ -18,7 +18,9 @@ namespace rtp {
             bool inOrder;
 
             std::chrono::system_clock::time_point localTimestamp;
-            uint32_t lastKeyframeRtpTimestamp;
+            uint32_t ssrc;
+            uint32_t frameId;
+            uint16_t packetDelta;
         };
     }
 }

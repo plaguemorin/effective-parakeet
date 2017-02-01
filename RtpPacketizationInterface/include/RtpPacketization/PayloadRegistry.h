@@ -8,9 +8,9 @@
 #include <map>
 
 #include <RtpPacketization/EncodedFrame.h>
-#include <RtpPacketization/PacketizedData.h>
+#include <RtpPacketization/PayloadDescriptor.h>
 #include <RtpPacketization/PayloadTypeFactory.h>
-#include <RtpPacketization/RtpDataReceiver.h>
+#include <RtpPacketization/StreamReconstructor.h>
 
 namespace rtp {
     namespace packetization {
@@ -20,7 +20,7 @@ namespace rtp {
 
             ~PayloadRegistry();
 
-            std::unique_ptr<RtpDataReceiver> CreateEncodedFramesSink(uint8_t payloadType);
+            std::unique_ptr<StreamReconstructor> CreateEncodedFramesSink(uint8_t payloadType);
 
             std::weak_ptr<PayloadTypeFactory> GetFactory(uint8_t payload) const;
 

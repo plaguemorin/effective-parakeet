@@ -6,13 +6,13 @@
 #include <cstdint>
 #include <memory>
 
-#include <RtpPacketization/RtpDataReceiver.h>
+#include <RtpPacketization/StreamReconstructor.h>
 
 namespace rtp {
     namespace packetization {
         class PayloadTypeFactory {
         public:
-            virtual std::unique_ptr<RtpDataReceiver> CreateSink(uint8_t payloadType) = 0;
+            virtual std::unique_ptr<StreamReconstructor> CreateSink(uint8_t payloadType) = 0;
         };
 
     }

@@ -1,15 +1,11 @@
 #include <RtpRtcp/Stream.h>
 
 namespace rtp {
-    Stream::Stream(const Stream::Config &config) {
+    Stream::Stream(const Stream::Config &config) : config(config) {}
 
-    }
+    Stream::~Stream() {}
 
-    Stream::~Stream() {
-
-    }
-
-    void Stream::ReportPacketizedData(const packetization::PacketizedData &data) {
+    void Stream::ReportPacketizedData(const packetization::PayloadDescriptor &data) {
       std::lock_guard<std::mutex> lock_guard(statsCriticalLock);
 
       if (data.inOrder) {
@@ -29,6 +25,4 @@ namespace rtp {
         lastKeyFrameLocalTime = std::chrono::system_clock::now();
       }
     }
-
-
 }
