@@ -23,8 +23,8 @@ namespace rtp {
       auto local_cc = (uint8_t) (*p & 0xF);
       ++p;
 
-      marker = (*p & 0x80) > 0;
-      payload_type = (uint8_t) (*p & 0x7F);
+      marker = (*p & 0b10000000) > 0;
+      payload_type = (uint8_t) (*p & 0b01111111);
       ++p;
 
       /* 16-bit Sequence Number */

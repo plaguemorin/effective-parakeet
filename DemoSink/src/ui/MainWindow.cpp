@@ -42,16 +42,19 @@ namespace {
 
 MainWindow::MainWindow(QWidget *parent, const Qt::WindowFlags &flags)
     : QMainWindow(parent, flags), refresh_timer(new QTimer(this)) {
-
   vpx_codec_dec_cfg_t cfg;
 
   // Setting number of threads to a constant value (1)
-  cfg.threads = 1;
+  cfg.threads = 8;
   cfg.h = cfg.w = 0;  // set after decode
 
   auto err = vpx_codec_dec_init(&ctx, vpx_dx_interface, &cfg, VPX_CODEC_USE_FRAME_THREADING);
 
+  setWindowTitle(QStringLiteral("Demo RTP"));
+  resize(480, 275);
+
   refresh_timer->connect(refresh_timer, SIGNAL(timeout()), this, SLOT(repaint()));
+  refresh_timer->setTimerType(Qt::PreciseTimer);
   refresh_timer->start(33);
 }
 
@@ -70,56 +73,26 @@ bool MainWindow::showVp8Frame(const std::unique_ptr<rtp::packetization::EncodedV
     return false;
   }
 
-/* An encoded image might contain more than one frame */
+  /* An encoded image might contain more than one frame */
   vpx_codec_iter_t iter = nullptr;
   while (auto img = vpx_codec_get_frame(&ctx, &iter)) {
-    resize(img->d_w, img->d_h);
-    int half_height = (img->d_h + 1) / 2;
-    int size_y = img->stride[VPX_PLANE_Y] * img->d_h;
-    int size_u = img->stride[VPX_PLANE_U] * half_height;
-    int size_v = img->stride[VPX_PLANE_V] * half_height;
+    if (image.width() != img->d_w || image.height() != img->d_h || image.format() != QImage::Format_RGB16) {
+      qDebug() << "Recreating frame with size " << img->d_w << "x" << img->d_h;
+      printFmt(img->fmt);
+      image = QImage(img->d_w, img->d_h, QImage::Format_RGB16);
+    }
 
-    DisplayYUV(
-        size_y, img->planes[VPX_PLANE_Y],
-        size_u, img->planes[VPX_PLANE_U],
-        size_v, img->planes[VPX_PLANE_V],
+    ConvertFromI420(
+        img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
+        img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],
+        img->planes[VPX_PLANE_V], img->stride[VPX_PLANE_V],
+        image.bits(), img->d_w * 2,
         img->d_w, img->d_h,
-        img->stride[VPX_PLANE_Y],
-        img->stride[VPX_PLANE_U],
-        img->stride[VPX_PLANE_V],
-        img->fmt
+        libyuv::FOURCC_RGBP
     );
   }
 
   return true;
-}
-
-void
-MainWindow::DisplayYUV(int size_y, unsigned char *buffer_y,
-                       int size_u, unsigned char *buffer_u,
-                       int size_v, unsigned char *buffer_v,
-                       unsigned int width, unsigned int height,
-                       int stride_y,
-                       int stride_u,
-                       int stride_v,
-                       vpx_img_fmt_t fmt) {
-
-  if (image.width() != width || image.height() != height || image.format() != QImage::Format_RGBX8888) {
-    qDebug() << "Recreating frame with size " << width << "x" << height;
-    printFmt(fmt);
-    image = QImage(width, height, QImage::Format_RGBX8888);
-  }
-
-  libyuv::ConvertFromI420(
-      buffer_y, stride_y,
-      buffer_u, stride_u,
-      buffer_v, stride_v,
-      image.bits(), width * 4,
-      width, height,
-      libyuv::FOURCC_RGBA
-  );
-
-
 }
 
 void MainWindow::paintEvent(QPaintEvent *event) {

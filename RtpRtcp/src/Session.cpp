@@ -1,6 +1,7 @@
 
 
 #include <RtpRtcp/Session.h>
+#include <RtpRtcp/RtcpPacket.h>
 #include "RtpVideoSink.h"
 
 namespace rtp {
@@ -50,15 +51,18 @@ namespace rtp {
     }
 
     bool Session::ParseRtcpPacket(const std::vector<uint8_t> &&raw_data) {
+      return true;
+      /* RTCP is special, there might be more than one! */
+
+      RtcpPacket packet;
+      if (packet.ReadPacket(raw_data)) {
+        return true;
+      }
+
       return false;
     }
 
     bool Session::ParseRtpPacket(const std::vector<uint8_t> &&raw_data) {
-      if (raw_data.size() < RtpPacket::kMinimalRtpPacketSize) {
-        // TODO: Error, packet is too darn small!
-        return false;
-      }
-
       RtpPacket packet;
       if (!packet.ReadPacket(std::move(raw_data))) {
         // Unable to parse packet

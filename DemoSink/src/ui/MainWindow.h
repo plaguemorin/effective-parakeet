@@ -35,7 +35,6 @@ private:
     QImage image;
     QTimer *refresh_timer;
 
-    void DisplayYUV(int size_y, unsigned char *buffer_y, int size_u, unsigned char *buffer_u, int size_v, unsigned char *buffer_v, unsigned int width, unsigned int height, int stride_y, int stride_u, int stride_v, vpx_img_fmt_t fmt);
 };
 
 
